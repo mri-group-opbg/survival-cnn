@@ -24,10 +24,51 @@ sns.set(style="darkgrid") #added:1
 from nilearn.image import mean_img #added
 from nilearn.plotting import plot_anat #added
 
+''' Loading Parameters '''
+parser = argparse.ArgumentParser()
 
+# Defining and parsing the command-line arguments
+parser = argparse.ArgumentParser(description='My program description')
+parser.add_argument('--learning-rate', type=str, help='Learning rate') # Paths should be passed in, not hardcoded
+parser.add_argument('--batch-size', type=int, default=16, help='Parameter 1.')
+parser.add_argument('--dim1', type=int, default=192, help='Dimension1')
+parser.add_argument('--dim2', type=int, default=256, help='Dimension2')
+parser.add_argument('--dim3', type=int, default=144, help='Dimension3')
+parser.add_argument('--sequence-1', type=str, help='It can be: T1_registered, T2_registered, FLAIR_registered, ADC_registered, rCBV_registered')
+parser.add_argument('--sequence-2', type=str)
+parser.add_argument('--mask-path', type=str)
+parser.add_argument('--p', type=float, default=0.8, help='DataPercentage')
+parser.add_argument('--kernel-size', nargs='+', type=int, help='KernelDim')
+parser.add_argument('--n-classes', type=int, default=2, help='Classes')
+parser.add_argument('--filters', type=int, default=16, help='Filters')
+parser.add_argument('--epochs', type=int, default=100, help='Epochs')
 
+args = parser.parse_args()
+kernel_size_tuple = tuple(args.kernel_size)
 
+print(f"I'm running training with a learning rate of: {args.learning_rate}")
+print(f"Batch size if {args.batch_size}")
+print(f"With dim1 equal to {args.dim1}")
+print(f"With dim2 equal to {args.dim2}")
+print(f"With dim3 equal to {args.dim3}")
+print(f"I'm running training with the following sequence1 {args.sequence_1}")
+print(f"I'm running training with the following sequence2 {args.sequence_2}")
+print(f"I'm running training on the following mask {args.mask_path}")
+print(f"I'm considering this percentage of data for the training {args.p}")
+print(f"The number of output classes is {args.n_classes}")
+print(f"I'm considering the following number of filters {args.filters}")
+print(f"I'm running the following number of epochs {args.epochs}")
 
+#---------------------
+# Main assigment
+#---------------------
+SEQUENCE_1=args.sequence_1
+SEQUENCE_2=args.sequence_2
+MaskPath=args.mask_path
+(dim1, dim2, dim3) = (args.dim1, args.dim2, args.dim3)
+datasetDir = "/images"
+nEpochs = args.epochs
+p = args.p
 
 '''' Get index positions of value in dataframe '''
 def getIndexes(dfObj, value):
@@ -43,8 +84,7 @@ def getIndexes(dfObj, value):
     return listOfPos
 
 '''DataFrame loading'''
-for csv_file in glob.glob('/config/CSV/' + '*.csv'):
-    result=pd.read_csv('DataFrame.csv')
+result=pd.read_csv('/config/CSV/DataFrame.csv')
 
 '''IMG loading'''
 listOfElems=[]  #array that need to obtain the effective subjects with the sequence that we want to analyse 
@@ -152,8 +192,6 @@ index_IMG=np.intersect1d(eq,pos_3) #intersection that gives the complememntary i
 def_index=random.choice(index_IMG)
 print(def_index)
 
-
-
 '''RESAMPLE BLOCK'''
 
 #The resample function is executed only on images without the dimension request, respect to a random image with dimension (192,256,144)
@@ -162,30 +200,21 @@ for i in not_in_index:
     IMG[i]=Res
     Data[i]=IMG[i].get_data()
     
-    
-    
 '''Reshaping of Input Matrix'''
 
 Input_matrix=np.empty((len(Data),dim1,dim2,dim3)) #in order to generate an empty array with a fixed shape
 
 for i in not_in_index:
-
     Input_matrix[i,:,:,:]=np.array(Data[i])
-
-
-
 
 for i in index_IMG:
-
     Input_matrix[i,:,:,:]=np.array(Data[i])
-    
     
 #in order to check the correct construction    
 Input_matrix.shape
 
 #import pickle
 #pickle.dump( Input_matrix, open( "Input_matrix.pickle", "wb" ) )
-
 
 '''Modules needed for TRAINING'''
 
@@ -214,9 +243,7 @@ indices_test = indices[N_80p:]
 X_train = Input_matrix[indices_train, ...]
 X_test = Input_matrix[indices_test, ...]
 
-
-
-labels=Label_Def
+labels = Label_Def
 
 #Outcome variable block added
 y_train = labels[indices_train] == 0
@@ -269,15 +296,14 @@ model.compile(loss='categorical_crossentropy',
 
 model.summary()
 
-
-
 '''Model fitting'''
 
-%time fit = model.fit(X_train, y_train, epochs=nEpochs, batch_size=batch_size)
+# %time 
+fit = model.fit(X_train, y_train, epochs=nEpochs, batch_size=batch_size)
 
 
 '''PLOT'''
-
+'''
 fig = plt.figure(figsize=(10, 4))
 epoch = np.arange(nEpochs) + 1
 fontsize = 16
@@ -289,43 +315,7 @@ plt.xlabel('epoch', fontsize=fontsize)
 plt.xticks(fontsize=fontsize)
 plt.yticks(fontsize=fontsize)
 plt.legend(frameon=False, fontsize=16);
-
-parser = argparse.ArgumentParser()
-
-
-# Defining and parsing the command-line arguments
-parser = argparse.ArgumentParser(description='My program description')
-parser.add_argument('--learning-rate', type=str, help='Learning rate') # Paths should be passed in, not hardcoded
-parser.add_argument('--batch-size', type=int, default=16, help='Parameter 1.')
-parser.add_argument('--dim1', type=int, default=192, help='Dimension1')
-parser.add_argument('--dim2', type=int, default=256, help='Dimension2')
-parser.add_argument('--dim3', type=int, default=144, help='Dimension3')
-parser.add_argument('--SEQUENCE_1', type=str)
-parser.add_argument('--SEQUENCE_2', type=str)
-parser.add_argument('--MaskPath', type=str)
-parser.add_argument('--p', type=float, default=0.8, help='DataPercentage')
-parser.add_argument('--kernel_size', nargs='+', type=int, help='KernelDim')
-parser.add_argument('--n_classes', type=int, default=2, help='Classes')
-parser.add_argument('--filters', type=int, default=16, help='Filters')
-parser.add_argument('--nEpochs', type=int, default=100, help='Epochs')
-
-args = parser.parse_args()
-kernel_size_tuple = tuple(args.kernel_size)
-
-print(f"I'm running training with a learning rate of: {args.learning_rate}")
-print(f"Batch size if {args.batch_size}")
-print(f"With dim1 equal to {args.dim1}")
-print(f"With dim2 equal to {args.dim2}")
-print(f"With dim3 equal to {args.dim3}")
-print(f"I'm running training with the following sequence1 {args.SEQUENCE_1}")
-print(f"I'm running training with the following sequence2 {args.SEQUENCE_2}")
-print(f"I'm running training on the following mask {args.MaskPath}")
-print(f"I'm considering this percentage of data for the training {args.p}")
-print(f"The number of output classes is {args.n_classes}")
-print(f"I'm considering the following number of filters {args.filters}")
-print(f"I'm running the following number of epochs {args.nEpochs}")
-
-
+'''
 
 
 
