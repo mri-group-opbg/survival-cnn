@@ -3,4 +3,5 @@
 .ipython
 .local
 *dataset/
-
+**/__pycache__
+*.png
